@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Log-Frequency Polar Audio Visualizer</title>
+    <link rel="stylesheet" href="styles/styles.css" />
+  </head>
+  <body>
+    <!-- ==========================================================
+         HEADER PANEL
+    =========================================================== -->
+    <div class="panel">
+      <h1>Log-Frequency Polar Audio Visualizer (24×24)</h1>
+      <p>
+        Clockwise sectors represent log-spaced frequency bands (20 Hz → Nyquist).
+        Radial rings represent amplitude thresholds (−12 dB → +12 dB).
+        The grid remains static until audio input is activated.
+      </p>
+    </div>
+
+    <!-- ==========================================================
+         CONTROL PANEL
+    =========================================================== -->
+    <div class="panel controls">
+      <button id="btnInit" class="primary">Initialize</button>
+      <button id="btnMic">🎙️ Use Microphone</button>
+
+      <label class="input" for="fileAudio">
+        📁 Load Audio File
+        <input id="fileAudio" type="file" accept="audio/*" hidden />
+      </label>
+
+      <button id="btnPlay" disabled>▶️ Play/Pause</button>
+
+      <span class="spacer"></span>
+
+      <label>
+          FFT Size:
+          <input id="fft" type="range" min="32" max="2048" step="1" list="fft-values" value="512" />
+          <output id="fftValue">512</output>
+          <datalist id="fft-values">
+            <option value="32" label="32"></option>
+            <option value="64" label="64"></option>
+            <option value="128" label="128"></option>
+            <option value="256" label="256"></option>
+            <option value="512" label="512"></option>
+            <option value="1024" label="1024"></option>
+            <option value="2048" label="2048"></option>
+          </datalist>
+        </label>
+
+
+      <label>
+        <input id="chkGlow" type="checkbox" /> Center Bass Glow
+      </label>
+
+      <button id="btnExport">Export Shapes JSON</button>
+      <button id="btnSelfTest">Run Self-Test</button>
+      <span id="testResult" class="note"></span>
+    </div>
+
+    <!-- ==========================================================
+         VISUALIZER CANVAS
+    =========================================================== -->
+    <canvas id="polarCanvas" width="1000" height="1000"></canvas>
+
+    <!-- ==========================================================
+         STATUS INDICATOR
+    =========================================================== -->
+    <div id="statusPanel" class="status idle">
+      Status: Idle (Static Grid)
+    </div>
+
+    <div class="note">
+      Hover to highlight cells. If nothing draws, check the console.
+    </div>
+
+    <!-- ==========================================================
+         ENTRY SCRIPT
+    =========================================================== -->
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
