@@ -1,14 +1,18 @@
 import type { PolarCell } from "./types";
 
 /** Build the 24×24 polar grid of cells. */
-export function buildShapes ( rings: number, sectors: number, center: { x: number; y: number }, radius: number ): PolarCell[]
+export function buildShapes (
+    rings: number,
+    sectors: number,
+    center: { x: number; y: number },
+    radius: number,
+    rotationOffset = - Math.PI / 2
+): PolarCell[]
 {
     const _result: PolarCell [ ] = new Array;
 
     const _ringStep   = radius / rings;
     const _sectorStep = ( Math.PI * 2 ) / sectors;
-
-    const ROTATE_UP   = - Math.PI / 2;
 
     for ( let _ring = 0; _ring < rings; _ring++ )
     {
@@ -17,8 +21,8 @@ export function buildShapes ( rings: number, sectors: number, center: { x: numbe
 
         for ( let _sector = 0; _sector < sectors; _sector++ )
         {
-            const _startAngle  = _sector * _sectorStep + ROTATE_UP;
-            const _endAngle    = ( _sector + 1 ) * _sectorStep + ROTATE_UP;
+            const _startAngle  = _sector * _sectorStep + rotationOffset;
+            const _endAngle    = ( _sector + 1) * _sectorStep + rotationOffset;
             const _middleRing  = ( _innerRing + _outerRing ) / 2;
             const _middleAngle = ( _startAngle + _endAngle ) / 2;
 
