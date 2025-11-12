@@ -8,10 +8,7 @@ import type { PolarCell } from "./types";
 const RINGS      = 24;
 const SECTORS    = 24;
 const PEAK_DECAY = 1 / 60; // ≈1 dB per second
-const ROTATE_UP  = -Math.PI / 2;
-
-let _loadedAudioElement: HTMLAudioElement | null = null;
-let _loadedSrcNode:      MediaElementAudioSourceNode | null = null;
+const ROTATE_UP  = - Math.PI / 2;
 
 ////    DOM ELEMENTS    ///////////////////////////////////
 
@@ -29,6 +26,32 @@ const ELEMENTS =
     btnSelfTest: document.getElementById ( "btnSelfTest" ) as HTMLButtonElement,
     testResult:  document.getElementById ( "testResult" )  as HTMLSpanElement
 };
+
+////    CANVAS AND GEOMETRY SETUP    //////////////////////
+
+const _context = ELEMENTS.canvas.getContext ( "2d" )!;
+const _center  = { x: ELEMENTS.canvas.width / 2, y: ELEMENTS.canvas.height / 2 };
+const _radius  = ELEMENTS.canvas.width * 0.48;
+
+let _rotationOffset = ROTATE_UP;
+let _targetRotation = ROTATE_UP;
+let _currentSector  = 0;
+let _animating      = false;
+
+let _shapes: PolarCell [ ] = buildShapes ( RINGS, SECTORS, _center, _radius );
+
+////    AUDIO STATE    ////////////////////////////////////
+
+let _usingAudio = false;
+let _audioEnvironment: Awaited<ReturnType<typeof initAudio>> | null = null;
+
+const _peaks         = new Array ( SECTORS ).fill ( -12 );
+const _lastDisplayDb = new Array ( SECTORS ).fill ( -12 );
+
+let _freqBounds: number [ ] = new Array;
+
+let _loadedAudioElement: HTMLAudioElement | null = null;
+let _loadedSrcNode:      MediaElementAudioSourceNode | null = null;
 
 ////    TOOLTIP    ////////////////////////////////////////
 
@@ -48,26 +71,67 @@ const _tooltip = document.createElement ( "div" );
 
 document.body.appendChild ( _tooltip );
 
-////    CANVAS AND GEOMETRY SETUP    //////////////////////
-
-const _context = ELEMENTS.canvas.getContext ( "2d" )!;
-const _center  = { x: ELEMENTS.canvas.width / 2, y: ELEMENTS.canvas.height / 2 };
-const _radius  = ELEMENTS.canvas.width * 0.48;
-
-let _shapes: PolarCell [ ] = buildShapes ( RINGS, SECTORS, _center, _radius );
-
-////    AUDIO STATE    ////////////////////////////////////
-
-let _audioEnvironment: Awaited<ReturnType<typeof initAudio>> | null = null;
-
-const _peaks         = new Array ( SECTORS ).fill ( -12 );
-const _lastDisplayDb = new Array ( SECTORS ).fill ( -12 );
-
-let _usingAudio = false;
-
-let _freqBounds: number [ ] = new Array;
-
 ////    UTILITY FUNCTIONS    //////////////////////////////
+
+function animateRotation ( target: number, duration = 500 )
+{
+    const _start         = performance.now();
+    const _startRotation = _rotationOffset;
+    const _delta         = target - _startRotation;
+
+    _animating = true;
+
+    function _step ( time: number )
+    {
+        const _t         = Math.min ( 1, ( time - _start) / duration );
+        const _eased     = _t * _t * (3 - 2 * _t); // smoothstep
+        _rotationOffset  = _startRotation + _delta * _eased;
+        _shapes          = buildShapes ( RINGS, SECTORS, _center, _radius, _rotationOffset );
+
+        _drawGrid ( );
+
+        if ( _t < 1 )
+        {
+            requestAnimationFrame ( _step );
+        }
+        else
+        {
+            _rotationOffset = target;
+            _animating      = false;
+        }
+    }
+
+    requestAnimationFrame ( _step );
+}
+
+function _setSectorAlignment ( sectorIndex: number )
+{
+    const _sectorStep  = ( Math.PI * 2 ) / SECTORS;
+    const _newRotation = - Math.PI / 2 - ( sectorIndex * _sectorStep + _sectorStep / 2 );
+
+    _targetRotation = _newRotation;
+
+    animateRotation ( _targetRotation );
+}
+
+function _nextSector ( )
+{
+    if ( _animating ) return;
+
+    _currentSector = ( _currentSector + 1 ) % SECTORS;
+
+    _setSectorAlignment ( _currentSector );
+}
+
+function _prevSector ( )
+{
+    if ( _animating ) return;
+
+    _currentSector = ( _currentSector - 1 + SECTORS ) % SECTORS;
+
+    _setSectorAlignment ( _currentSector );
+}
+
 
 function _setStatus ( live: boolean )
 {
@@ -416,6 +480,13 @@ function _wireUI ( )
             ELEMENTS.testResult.textContent = `✖ ${ ( err as Error ).message}`;
             ELEMENTS.testResult.className   = "note fail";
         }
+    } );
+
+    document.addEventListener ( "keydown", ( event ) =>
+    {
+        if ( event.key === "ArrowRight" ) _nextSector ( );
+
+        if ( event.key === "ArrowLeft"  ) _prevSector ( );
     } );
 }
 
