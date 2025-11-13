@@ -1,84 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Log-Frequency Polar Audio Visualizer</title>
-    <link rel="stylesheet" href="styles/styles.css" />
+    <meta name="viewport"         content="width=device-width, initial-scale=1.0" />
+    <meta name="application-name" content="Polar Audio Visualizer"/>
+
+    <link rel="apple-touch-icon-precomposed" sizes="57x57"   href="_assets/images/favicons/apple-touch-icon-57x57.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="_assets/images/favicons/apple-touch-icon-114x114.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="72x72"   href="_assets/images/favicons/apple-touch-icon-72x72.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="_assets/images/favicons/apple-touch-icon-144x144.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="60x60"   href="_assets/images/favicons/apple-touch-icon-60x60.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="_assets/images/favicons/apple-touch-icon-120x120.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="76x76"   href="_assets/images/favicons/apple-touch-icon-76x76.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="_assets/images/favicons/apple-touch-icon-152x152.png" />
+
+    <link rel="icon" type="image/png" sizes="196x196" href="_assets/images/favicons/favicon-196x196.png" />
+    <link rel="icon" type="image/png" sizes="96x96"   href="_assets/images/favicons/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="32x32"   href="_assets/images/favicons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16"   href="_assets/images/favicons/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="128x128" href="_assets/images/favicons/favicon-128.png" />
+
+    <meta name="msapplication-TileColor"         content="#FFFFFF" />
+    <meta name="msapplication-TileImage"         content="_assets/images/favicons/mstile-144x144.png" />
+    <meta name="msapplication-square70x70logo"   content="_assets/images/favicons/mstile-70x70.png" />
+    <meta name="msapplication-square150x150logo" content="_assets/images/favicons/mstile-150x150.png" />
+    <meta name="msapplication-wide310x150logo"   content="_assets/images/favicons/mstile-310x150.png" />
+    <meta name="msapplication-square310x310logo" content="_assets/images/favicons/mstile-310x310.png" />
+
+    <title>Polar Audio Visualizer</title>
+
+    <link rel="stylesheet" href="_assets/styles/styles.css" />
+
   </head>
   <body>
-    <!-- ==========================================================
-         HEADER PANEL
-    =========================================================== -->
-    <div class="panel">
-      <h1>Log-Frequency Polar Audio Visualizer (24×24)</h1>
-      <p>
-        Clockwise sectors represent log-spaced frequency bands (20 Hz → Nyquist).
-        Radial rings represent amplitude thresholds (−12 dB → +12 dB).
-        The grid remains static until audio input is activated.
-      </p>
-    </div>
 
-    <!-- ==========================================================
-         CONTROL PANEL
-    =========================================================== -->
-    <div class="panel controls">
-      <button id="btnInit" class="primary">Initialize</button>
-      <button id="btnMic">🎙️ Use Microphone</button>
+    <!-- ////    HEADER PANEL    ////////////////////// -->
 
-      <label class="input" for="fileAudio">
-        📁 Load Audio File
-        <input id="fileAudio" type="file" accept="audio/*" hidden />
-      </label>
+      <div class="panel">
 
-      <button id="btnPlay" disabled>▶️ Play/Pause</button>
+        <h1>Log-Frequency Polar Audio Visualizer (24×24)</h1>
 
-      <span class="spacer"></span>
+        <p>
+          Clockwise sectors represent log-spaced frequency bands (20 Hz → Nyquist).
+          Radial rings represent amplitude thresholds (−12 dB → +12 dB).
+          The grid remains static until audio input is activated.
+        </p>
 
-      <label>
-          FFT Size:
-          <input id="fft" type="range" min="32" max="2048" step="1" list="fft-values" value="512" />
-          <output id="fftValue">512</output>
-          <datalist id="fft-values">
-            <option value="32" label="32"></option>
-            <option value="64" label="64"></option>
-            <option value="128" label="128"></option>
-            <option value="256" label="256"></option>
-            <option value="512" label="512"></option>
-            <option value="1024" label="1024"></option>
-            <option value="2048" label="2048"></option>
-          </datalist>
+      </div>
+
+    <!-- ////    CONTROL PANEL    ///////////////////// -->
+
+      <div class="panel controls">
+
+        <button id="button-init" class="primary">Initialize</button>
+        <button id="button-mic">🎙️ Use Microphone</button>
+
+        <label class="input" for="fileAudio">
+          📁 Load Audio File
+          <input id="fileAudio" type="file" accept="audio/*" hidden />
         </label>
 
+        <button id="button-play" disabled>▶️ Play/Pause</button>
 
-      <label>
-        <input id="chkGlow" type="checkbox" /> Center Bass Glow
-      </label>
+        <span class="spacer"></span>
 
-      <button id="btnExport">Export Shapes JSON</button>
-      <button id="btnSelfTest">Run Self-Test</button>
-      <span id="testResult" class="note"></span>
-    </div>
+        <label>
 
-    <!-- ==========================================================
-         VISUALIZER CANVAS
-    =========================================================== -->
-    <canvas id="polarCanvas" width="1000" height="1000"></canvas>
+            FFT Size:
+            <input id="fft" type="range" min="32" max="2048" step="1" list="fft-values" value="512" />
 
-    <!-- ==========================================================
-         STATUS INDICATOR
-    =========================================================== -->
-    <div id="statusPanel" class="status idle">
-      Status: Idle (Static Grid)
-    </div>
+            <output id="fftValue">512</output>
 
-    <div class="note">
-      Hover to highlight cells. If nothing draws, check the console.
-    </div>
+            <datalist id="fft-values">
+              <option value="32" label="32"></option>
+              <option value="64" label="64"></option>
+              <option value="128" label="128"></option>
+              <option value="256" label="256"></option>
+              <option value="512" label="512"></option>
+              <option value="1024" label="1024"></option>
+              <option value="2048" label="2048"></option>
+            </datalist>
 
-    <!-- ==========================================================
-         ENTRY SCRIPT
-    =========================================================== -->
-    <script type="module" src="/src/main.ts"></script>
+          </label>
+
+        <label>
+          <input id="chkGlow" type="checkbox" /> Center Bass Glow
+        </label>
+
+        <button id="button-export">Export Shapes JSON</button>
+        <button id="button-selfTest">Run Self-Test</button>
+
+        <span id="testResult" class="note"></span>
+
+      </div>
+
+    <!-- ////    VISUALIZER CANVAS    ///////////////// -->
+
+      <canvas id="polarCanvas" width="1000" height="1000"></canvas>
+
+    <!-- ////    STATUS INDICATOR    ////////////////// -->
+
+      <div id="statusPanel" class="status idle">
+        Status: Idle (Static Grid)
+      </div>
+
+      <div class="note">
+        Hover to highlight cells. If nothing draws, check the console.
+      </div>
+
+    <!-- ////    ENTRY SCRIPT    ////////////////////// -->
+
+      <script type="module" src="/src/main.ts"></script>
+
   </body>
 </html>

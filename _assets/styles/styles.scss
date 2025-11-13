@@ -1,0 +1,259 @@
+/* =============================================================================
+   Polar Visualizer – Minimal Dark Theme (SCSS Version)
+   ---------------------------------------------------------------------------
+   Purpose:
+     Recreates the simple dark UI of the standalone visualizer.
+     Keeps focus on the Canvas with a low-clutter control panel.
+
+   SCSS Features Used:
+     - Variables for reusable values
+     - Nesting for cleaner structure
+     - Parent selector (&) for variants and pseudo-classes
+     - Mixins for repeated patterns (optional, shown for status states)
+   ============================================================================= */
+
+// ============================================================================
+// Variables
+// ============================================================================
+// Note: Using SCSS variables instead of CSS custom properties for compile-time
+// values. If you need runtime theming, keep CSS custom properties in :root
+
+$bg: #0b0b0c;
+$panel: #141416;
+$text: #e8e8ea;
+$muted: #9aa0a6;
+$border: #2a2b2f;
+
+$accent: #2b3a55;
+$accent-hover: #1d2842;
+$ok: #90ee90;
+$warn: #f8d77e;
+
+// Spacing & sizing
+$border-radius: 16px;
+$border-radius-sm: 12px;
+$border-radius-xs: 10px;
+$max-panel-width: 1100px;
+
+// ============================================================================
+// Base Styles
+// ============================================================================
+
+:root {
+  color-scheme: dark;
+  
+  // Note: Keeping CSS custom properties for potential runtime theming
+  --bg: #{$bg};
+  --panel: #{$panel};
+  --text: #{$text};
+  --muted: #{$muted};
+  --border: #{$border};
+  --accent: #{$accent};
+  --accent-hover: #{$accent-hover};
+  --ok: #{$ok};
+  --warn: #{$warn};
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  font-size: 14px;
+  line-height: 1.5;
+  color: $text;
+  background: $bg;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+// ============================================================================
+// Typography
+// ============================================================================
+
+h1 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  color: $muted;
+}
+
+// ============================================================================
+// Panel Component
+// ============================================================================
+// Note: Panel serves as the main container for controls and content
+
+.panel {
+  background: $panel;
+  border: 1px solid $border;
+  border-radius: $border-radius;
+  padding: 14px 16px;
+  box-shadow: 0 6px 20px #0004;
+  width: 95vw; // Note: Using max-width instead of min() to avoid SCSS compilation issues
+  max-width: $max-panel-width;
+  margin-bottom: 16px;
+}
+
+// ============================================================================
+// Controls Layout
+// ============================================================================
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+// ============================================================================
+// Interactive Elements (Buttons & Inputs)
+// ============================================================================
+// Note: Using nesting and parent selector (&) for hover states and variants
+
+button,
+label.input {
+  background: #1b1c1f;
+  color: $text;
+  border: 1px solid $border;
+  border-radius: $border-radius-sm;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-size: 14px;
+
+  // Hover state - Note: Using & to reference parent selector
+  &:hover {
+    background: #23252a;
+  }
+
+  // Primary button variant - Note: Using & for modifier class
+  &.primary {
+    border-color: $accent;
+    background: $accent;
+    color: #dbe8ff;
+
+    // Nested hover for primary variant
+    &:hover {
+      background: $accent-hover;
+    }
+  }
+}
+
+// Range input styling
+input[type="range"] {
+  width: 160px;
+  accent-color: $accent;
+}
+
+// ============================================================================
+// Canvas Element
+// ============================================================================
+
+canvas {
+  width: 100%;
+  height: auto;
+  border-radius: $border-radius;
+  background: #000;
+  display: block;
+}
+
+// ============================================================================
+// Status & Utility Classes
+// ============================================================================
+
+.note {
+  color: $muted;
+  font-size: 12px;
+}
+
+// Status indicator base styles
+.status {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: $border-radius-xs;
+  margin-top: 6px;
+  text-align: center;
+  display: inline-block;
+
+  // Idle state variant
+  &.idle {
+    background: #222;
+    color: $warn;
+    border: 1px solid #555;
+  }
+
+  // Live state variant with pulse animation
+  &.live {
+    background: #142;
+    color: $ok;
+    border: 1px solid #274;
+    animation: pulse 1.6s infinite;
+  }
+}
+
+// ============================================================================
+// Animations
+// ============================================================================
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// ============================================================================
+// Responsive Design
+// ============================================================================
+// Note: Media queries at the bottom for easier maintenance
+// These adjustments optimize the UI for mobile devices
+
+@media (max-width: 700px) {
+  .panel {
+    padding: 12px;
+  }
+
+  button,
+  label.input {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  input[type="range"] {
+    width: 120px;
+  }
+}
+
+// ============================================================================
+// Optional: Mixin Example
+// ============================================================================
+// Note: This mixin isn't used above, but demonstrates how you could create
+// reusable status state styles if you had more variants
+
+@mixin status-variant($bg, $color, $border-color) {
+  background: $bg;
+  color: $color;
+  border: 1px solid $border-color;
+}
+
+// Usage example (commented out):
+// .status {
+//   &.idle {
+//     @include status-variant(#222, $warn, #555);
+//   }
+//   &.live {
+//     @include status-variant(#142, $ok, #274);
+//     animation: pulse 1.6s infinite;
+//   }
+// }

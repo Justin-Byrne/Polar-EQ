@@ -1,0 +1,29 @@
+### HTML5 ###
+# Template for HTML5 projects
+
+## Derived B.S.
+.DS_Store
+
+## Dump Folder
+_dump/
+_aDump/
+
+## Workspaces
+*.sublime-workspace
+
+## Tests
+*-test-[0-9].*
+*-test-{[0-9]}.*
+
+## STASHES
+*-stash-[0-9].*
+*-{stash-[0-9]}.*
+
+## SPECIAL
+_development/
+*.hushlogin
+Icon*
+FL/
+
+## EXTRA
+readme.sh

@@ -7,7 +7,7 @@ export function buildShapes (
     center: { x: number; y: number },
     radius: number,
     rotationOffset = - Math.PI / 2
-): PolarCell[]
+): PolarCell [ ]
 {
     const _result: PolarCell [ ] = new Array;
 
