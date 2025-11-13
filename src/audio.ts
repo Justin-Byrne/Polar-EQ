@@ -13,7 +13,7 @@ export async function initAudio ( fftSize: number, mic = false ): Promise<AudioE
     const context  = new AUDIOCONTEXT ( );
     const analyser = context.createAnalyser ( );
 
-          analyser.fftSize = fftSize;
+    analyser.fftSize = fftSize;
 
     const data = new Uint8Array ( analyser.frequencyBinCount );
 
@@ -22,7 +22,7 @@ export async function initAudio ( fftSize: number, mic = false ): Promise<AudioE
         const _stream = await navigator.mediaDevices.getUserMedia ( { audio: true } );
         const _source = context.createMediaStreamSource ( _stream );
 
-              _source.connect ( analyser );
+        _source.connect ( analyser );
     }
 
     return { context, analyser, data };
