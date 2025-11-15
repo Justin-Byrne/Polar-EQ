@@ -19,10 +19,6 @@ _aDump/
 *-stash-[0-9].*
 *-{stash-[0-9]}.*
 
-## Node
-node_modules/
-package-lock.json
-
 ## SPECIAL
 _development/
 *.hushlogin
