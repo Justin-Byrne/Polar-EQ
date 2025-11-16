@@ -1,17 +1,17 @@
-import styleguide from "eslint-plugin-wideband";
+import wideband from "eslint-plugin-wideband";
 import tsParser from "@typescript-eslint/parser";
 
 export default [
   {
     files: [ "**/*.ts", "**/*.js" ],
     languageOptions: { parser: tsParser, },
-    plugins: { styleguide, },
+    plugins: { wideband, },
     rules:
     {
-      "styleguide/arrays-brackets-spacing": "error",
-      "styleguide/functions-declarations-spacing": "error",
-      "styleguide/functions-calls-spacing": "error",
-      "styleguide/expressions-operators-spacing": "error",
+      "wideband/arrays-brackets-spacing": "error",
+      "wideband/functions-declarations-spacing": "error",
+      "wideband/functions-calls-spacing": "error",
+      "wideband/expressions-operators-spacing": "error",
     },
   },
 ];
