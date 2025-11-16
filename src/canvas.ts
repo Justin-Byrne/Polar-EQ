@@ -5,6 +5,20 @@
 
 import type { PolarCell } from "./types";
 
+import
+{
+    FULL_TURN_RAD,
+    DEFAULT_ROTATION_UP,
+    DISPLAY_DB_MIN,
+    DISPLAY_DB_MAX,
+    DISPLAY_DB_RANGE,
+    HUE_GREEN_DEG,
+    LIGHTNESS_BASE,
+    LIGHTNESS_RANGE,
+    GRID_LINE_OPACITY,
+    CELL_STROKE_OPACITY
+} from "./constants";
+
 /**
  * Build a polar grid of cells (rings × sectors).
  *
@@ -26,7 +40,7 @@ export function buildShapes (
     const _result: PolarCell [ ] = new Array;
 
     const _ringStep   = radius / rings;
-    const _sectorStep = ( Math.PI * 2 ) / sectors;
+    const _sectorStep = FULL_TURN_RAD / sectors;
 
     for ( let _ring = 0; _ring < rings; _ring++ )
     {
@@ -36,12 +50,11 @@ export function buildShapes (
         for ( let _sector = 0; _sector < sectors; _sector++ )
         {
             const _startAngle  = _sector * _sectorStep + rotationOffset;
-            const _endAngle    = ( _sector + 1) * _sectorStep + rotationOffset;
+            const _endAngle    = ( _sector + 1 ) * _sectorStep + rotationOffset;
             const _middleRing  = ( _innerRing + _outerRing ) / 2;
             const _middleAngle = ( _startAngle + _endAngle ) / 2;
 
-            _result.push (
-            {
+            _result.push ( {
                 id:         `${_ring}-${_sector}`,
                 ring:       _ring,
                 sector:     _sector,
@@ -71,10 +84,30 @@ export function pathForCell (
 {
     const _path = new Path2D ( );
 
-          _path.arc ( center.x, center.y, cell.innerRing, cell.startAngle, cell.endAngle, false );
-          _path.lineTo ( center.x + Math.cos ( cell.endAngle ) * cell.outerRing, center.y + Math.sin ( cell.endAngle ) * cell.outerRing );
-          _path.arc ( center.x, center.y, cell.outerRing, cell.endAngle, cell.startAngle, true );
-          _path.closePath ( );
+    _path.arc (
+        center.x,
+        center.y,
+        cell.innerRing,
+        cell.startAngle,
+        cell.endAngle,
+        false
+    );
+
+    _path.lineTo (
+        center.x + Math.cos ( cell.endAngle ) * cell.outerRing,
+        center.y + Math.sin ( cell.endAngle ) * cell.outerRing
+    );
+
+    _path.arc (
+        center.x,
+        center.y,
+        cell.outerRing,
+        cell.endAngle,
+        cell.startAngle,
+        true
+    );
+
+    _path.closePath ( );
 
     return _path;
 }
@@ -86,9 +119,11 @@ export function pathForCell (
  */
 export function colorForDb ( decibel: number ): string
 {
-    const _t     = ( Math.max ( - 12, Math.min ( 12, decibel ) ) + 12 ) / 24;  // Interpolation factor; 0..1
-    const _hue   = 120 - 120 * _t;     // 120 (green) → 0 (red)
-    const _light = 40 + 40 * _t;       // slightly brighter as it gets louder
+    const _clamped = Math.max ( DISPLAY_DB_MIN, Math.min ( DISPLAY_DB_MAX, decibel ) );
+    const _t       = ( _clamped - DISPLAY_DB_MIN ) / DISPLAY_DB_RANGE;  // Interpolation factor; 0..1
+
+    const _hue     = HUE_GREEN_DEG - HUE_GREEN_DEG * _t;       // 120 (green) → 0 (red)
+    const _light   = LIGHTNESS_BASE + LIGHTNESS_RANGE * _t;  // slightly brighter as it gets louder
 
     return `hsl(${_hue},100%,${_light}%)`;
 }

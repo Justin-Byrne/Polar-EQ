@@ -3,6 +3,20 @@
 // Lightweight, reusable tooltip helper for canvas hover info.
 // ====================================================
 
+import
+{
+    TOOLTIP_BG_COLOR,
+    TOOLTIP_BORDER_COLOR,
+    TOOLTIP_BORDER_RADIUS_PX,
+    TOOLTIP_PADDING_X,
+    TOOLTIP_PADDING_Y,
+    TOOLTIP_FONT_SIZE_PX,
+    TOOLTIP_OPACITY_HIDDEN,
+    TOOLTIP_OPACITY_VISIBLE,
+    TOOLTIP_FADE_DURATION_SEC,
+    TOOLTIP_OFFSET
+} from "./constants";
+
 /**
  * Imperative tooltip API for showing small info panels near the cursor.
  */
@@ -32,15 +46,15 @@ export function createTooltip ( ): Tooltip
     const _element = document.createElement ( "div" );
 
     _element.style.position      = "fixed";
-    _element.style.background    = "rgba(30,30,30,0.9)";
-    _element.style.border        = "1px solid rgba(255,255,255,0.15)";
-    _element.style.borderRadius  = "8px";
-    _element.style.padding       = "6px 10px";
-    _element.style.fontSize      = "13px";
+    _element.style.background    = TOOLTIP_BG_COLOR;
+    _element.style.border        = `1px solid ${TOOLTIP_BORDER_COLOR}`;
+    _element.style.borderRadius  = `${TOOLTIP_BORDER_RADIUS_PX}px`;
+    _element.style.padding       = `${TOOLTIP_PADDING_Y}px ${TOOLTIP_PADDING_X}px`;
+    _element.style.fontSize      = `${TOOLTIP_FONT_SIZE_PX}px`;
     _element.style.pointerEvents = "none";
     _element.style.color         = "#fff";
-    _element.style.opacity       = "0";
-    _element.style.transition    = "opacity 0.15s ease";
+    _element.style.opacity       = TOOLTIP_OPACITY_HIDDEN.toString ( );
+    _element.style.transition    = `opacity ${TOOLTIP_FADE_DURATION_SEC}s ease`;
     _element.style.whiteSpace    = "nowrap";
 
     document.body.appendChild ( _element );
@@ -49,11 +63,14 @@ export function createTooltip ( ): Tooltip
         element: _element,
         show ( clientX, clientY, html )
         {
-            _element.style.opacity = "1";
-            _element.style.left = clientX + 12 + "px";
-            _element.style.top = clientY + 12 + "px";
-            _element.innerHTML = html;
+            _element.style.opacity = TOOLTIP_OPACITY_VISIBLE.toString ( );
+            _element.style.left    = clientX + TOOLTIP_OFFSET + "px";
+            _element.style.top     = clientY + TOOLTIP_OFFSET + "px";
+            _element.innerHTML     = html;
         },
-        hide ( ) { _element.style.opacity = "0"; },
+        hide ( )
+        {
+            _element.style.opacity = TOOLTIP_OPACITY_HIDDEN.toString ( );
+        }
     };
 }

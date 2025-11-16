@@ -3,6 +3,8 @@
 // Audio context + analyser setup and microphone wiring.
 // ========================================================
 
+import { VALID_FFT_SIZES } from "./constants";
+
 export interface AudioEnvironment
 {
     context:  AudioContext;            /** Shared AudioContext used by the visualizer. */
@@ -21,7 +23,7 @@ export async function initAudio (
     mic = false
 ): Promise<AudioEnvironment>
 {
-    const AUDIOCONTEXT = window.AudioContext || (window as any).webkitAudioContext;
+    const AUDIOCONTEXT = window.AudioContext || ( window as any ).webkitAudioContext;
 
     const context  = new AUDIOCONTEXT ( );
     const analyser = context.createAnalyser ( );
