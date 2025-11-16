@@ -24,6 +24,8 @@ _development/
 *.hushlogin
 Icon*
 FL/
+polar-eq.ts
+merge*.ts
 
 ## EXTRA
 readme.sh
