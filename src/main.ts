@@ -9,19 +9,56 @@
 // - Handling UI (buttons, keyboard, tooltip, FFT slider)
 // ========================================================
 
-import { buildShapes, pathForCell, colorForDb } from "./canvas";
-import { dbFromByte, norm01FromDb, displayDb, logFreqBounds } from "./utils";
+import {
+    BASS_BIN_PERCENT,
+    CANVAS_RADIUS_SCALE,
+    CELL_STROKE_OPACITY,
+    DEFAULT_RINGS,
+    DEFAULT_SECTORS,
+    DISPLAY_DB_MIN,
+    DISPLAY_DB_RANGE,
+    FFT_VALUE_FLASH_MS,
+    FULL_TURN_RAD,
+    GLOW_BASE_FACTOR,
+    GLOW_BASS_MULTIPLIER,
+    GLOW_COLOR_ALPHA_BASE,
+    GLOW_COLOR_ALPHA_RANGE,
+    GRID_LINE_OPACITY,
+    INITIAL_ROTATION,
+    PEAK_DECAY_RATE,
+    SHAPES_EXPORT_FILENAME,
+    TOOLTIP_OFFSET_PX
+} from "./constants";
+
+import {
+    buildShapes,
+    colorForDb,
+    pathForCell
+} from "./canvas";
+
+import {
+    dbFromByte,
+    displayDb,
+    logFreqBounds,
+    norm01FromDb
+} from "./utils";
+
 import { initAudio } from "./audio";
-import type { PolarCell } from "./types";
 import { createTooltip } from "./tooltip";
 import { animateRotation } from "./animation";
 
+import type { PolarCell } from "./types";
+
+
 //**    CONFIGURATION    ********************************//
 
-  const RINGS      = 24;
-  const SECTORS    = 24;
-  const PEAK_DECAY = 1 / 60; // ≈1 dB per second
-  const ROTATE_UP  = - Math.PI / 2;
+  const RINGS   = DEFAULT_RINGS;
+  const SECTORS = DEFAULT_SECTORS;
+
+  let rotationOffset = INITIAL_ROTATION;
+  let targetRotation = INITIAL_ROTATION;
+  let currentSector  = 0;
+  let animating      = false;
 
 //**    DOM ELEMENTS    *********************************//
 
@@ -49,21 +86,18 @@ import { animateRotation } from "./animation";
 
 //**    CANVAS AND GEOMETRY    **************************//
 
-  const CANVAS_CONTEXT = ELEMENTS.canvas.getContext ( "2d" )!;
-  const CENTER         = { x: ELEMENTS.canvas.width / 2, y: ELEMENTS.canvas.height / 2 };
-  const RADIUS         = ELEMENTS.canvas.width * 0.48;
+  const CANVAS_CONTEXT    = ELEMENTS.canvas.getContext ( "2d" )!;
 
-  let rotationOffset = ROTATE_UP;
-  let targetRotation = ROTATE_UP;
-  let currentSector  = 0;
-  let animating      = false;
+  const CENTER            = { x: ELEMENTS.canvas.width / 2, y: ELEMENTS.canvas.height / 2 };
 
-  let Shapes: PolarCell [ ] = buildShapes ( RINGS, SECTORS, CENTER, RADIUS );
+  let RADIUS              = ELEMENTS.canvas.width * CANVAS_RADIUS_SCALE;
+
+  let Shapes: PolarCell[] = buildShapes ( RINGS, SECTORS, CENTER, RADIUS );
 
 //**    AUDIO STATE    **********************************//
 
-  const PEAKS           = new Array ( SECTORS ).fill ( -12 );
-  const LAST_DISPLAY_DB = new Array ( SECTORS ).fill ( -12 );
+  const PEAKS           = new Array ( SECTORS ).fill ( DISPLAY_DB_MIN );
+  const LAST_DISPLAY_DB = new Array ( SECTORS ).fill ( DISPLAY_DB_MIN );
 
   let usingAudio = false;
   let AudioEnvironment: Awaited<ReturnType<typeof initAudio>> | null = null;
@@ -85,7 +119,11 @@ import { animateRotation } from "./animation";
   {
       if ( ! AudioEnvironment ) return;
 
-      const { context: _audioContext, analyser: _analyser, data: _data } = AudioEnvironment;
+      const {
+          context:  _audioContext,
+          analyser: _analyser,
+          data:     _data
+      } = AudioEnvironment;
 
       const _bins         = _analyser.frequencyBinCount;
       const _perSectorMax = new Array ( SECTORS ).fill ( 0 );
@@ -95,15 +133,15 @@ import { animateRotation } from "./animation";
       const loop = ( ) =>
       {
           if ( _audioContext.state === "running" )
-
               _analyser.getByteFrequencyData ( _data );
 
           CANVAS_CONTEXT.clearRect ( 0, 0, ELEMENTS.canvas.width, ELEMENTS.canvas.height );
 
-          // Aggregate bins into log frequency bands
+          // Aggregate bins per log band
           for ( let _sector = 0; _sector < SECTORS; _sector++ )
           {
-              const _freqA = FreqBounds [ _sector ], _freqB = FreqBounds [ _sector + 1 ];
+              const _freqA = FreqBounds [ _sector ];
+              const _freqB = FreqBounds [ _sector + 1 ];
 
               const _binA = Math.floor ( ( _freqA / ( _audioContext.sampleRate / 2 ) ) * _bins );
               const _binB = Math.floor ( ( _freqB / ( _audioContext.sampleRate / 2 ) ) * _bins );
@@ -111,24 +149,23 @@ import { animateRotation } from "./animation";
               let _max = 0;
 
               for ( let _i = _binA; _i <= _binB; _i++ )
-
                   _max = Math.max ( _max, _data [ _i ] ?? 0 );
 
               _perSectorMax [ _sector ] = _max;
           }
 
-          // Fill grid cells based on thresholds
-          for ( const _cell of Shapes )
+          // Fill grid cells
+          for (const _cell of Shapes)
           {
-              const _sector       = _cell.sector;
-              const _vector       = _perSectorMax [ _sector ];
-              const _decibel      = dbFromByte ( _vector );
-              const _normalizedDb = norm01FromDb ( _decibel );
-              const _display      = displayDb ( _normalizedDb );
+              const _sector  = _cell.sector;
+              const _vector  = _perSectorMax [ _sector ];
+              const _decibel = dbFromByte ( _vector );
+              const _norm    = norm01FromDb ( _decibel );
+              const _display = displayDb ( _norm );
 
               LAST_DISPLAY_DB [ _sector ] = _display;
 
-              const _threshold = - 12 + ( ( _cell.ring + 1 ) / RINGS ) * 24;
+              const _threshold = DISPLAY_DB_MIN + ( ( _cell.ring + 1 ) / RINGS ) * DISPLAY_DB_RANGE;
 
               if ( _threshold <= _display )
               {
@@ -136,23 +173,24 @@ import { animateRotation } from "./animation";
                   CANVAS_CONTEXT.fill ( pathForCell ( _cell, CENTER ) );
               }
 
-              CANVAS_CONTEXT.strokeStyle = "rgba(255,255,255,0.1)";
-
+              CANVAS_CONTEXT.strokeStyle = `rgba(255,255,255,${CELL_STROKE_OPACITY})`;
               CANVAS_CONTEXT.stroke ( pathForCell ( _cell, CENTER ) );
 
-              PEAKS [ _sector ] = Math.max ( _display, PEAKS [ _sector ] - PEAK_DECAY );
+              PEAKS [ _sector ] = Math.max ( _display, PEAKS [ _sector ] - PEAK_DECAY_RATE );
           }
 
-          // Draw per-sector peak rings
+          // Draw peaks
           CANVAS_CONTEXT.strokeStyle = "white";
 
           for ( let _sector = 0; _sector < SECTORS; _sector++ )
           {
-              const _ringIndex  = Math.floor ( ( ( PEAKS [ _sector ] + 12 ) / 24 ) * RINGS );
-              const _ringStep   = RADIUS / RINGS;
-              const _ring       = ( _ringIndex + 1 ) * _ringStep;
-              const _startAngle = ( _sector * Math.PI * 2 ) / SECTORS + ROTATE_UP;
-              const _endAngle   = ( ( _sector + 1 ) * Math.PI * 2 ) / SECTORS + ROTATE_UP;
+              const _ringIndex = Math.floor ( ( ( PEAKS [ _sector ] - DISPLAY_DB_MIN ) / DISPLAY_DB_RANGE ) * RINGS );
+
+              const _ringStep = RADIUS / RINGS;
+              const _ring     = ( _ringIndex + 1 ) * _ringStep;
+
+              const _startAngle = ( _sector * FULL_TURN_RAD ) / SECTORS + INITIAL_ROTATION;
+              const _endAngle   = ( ( _sector + 1 ) * FULL_TURN_RAD ) / SECTORS + INITIAL_ROTATION;
 
               CANVAS_CONTEXT.beginPath ( );
               CANVAS_CONTEXT.arc ( CENTER.x, CENTER.y, _ring, _startAngle, _endAngle );
@@ -160,15 +198,13 @@ import { animateRotation } from "./animation";
           }
 
           // Bass glow
-          if ( ELEMENTS.inputs.glow.checked )
+          if (ELEMENTS.inputs.glow.checked)
           {
-              const _bassBins = Math.max ( 1, Math.floor ( data.length * 0.05 ) );
+              const _bassBins = Math.max ( 1, Math.floor ( _data.length * BASS_BIN_PERCENT ) );
 
               let _sum = 0;
 
-              for ( let _i = 0; _i < _bassBins; _i++)
-
-                  _sum += data [ _i ];
+              for ( let _i = 0; _i < _bassBins; _i++ ) _sum += _data [ _i ];
 
               const _bass = _sum / ( _bassBins * 255 );
 
@@ -189,12 +225,10 @@ import { animateRotation } from "./animation";
   function drawGrid ( )
   {
       CANVAS_CONTEXT.clearRect ( 0, 0, ELEMENTS.canvas.width, ELEMENTS.canvas.height );
-
-      CANVAS_CONTEXT.strokeStyle = "rgba(255,255,255,0.15)";
+      CANVAS_CONTEXT.strokeStyle = `rgba(255,255,255,${GRID_LINE_OPACITY})`;
 
       for ( const _cell of Shapes )
-
-          CANVAS_CONTEXT.stroke ( pathForCell ( _cell, CENTER ) );
+        CANVAS_CONTEXT.stroke ( pathForCell ( _cell, CENTER ) );
   }
 
   /**
@@ -202,19 +236,24 @@ import { animateRotation } from "./animation";
    */
   function drawGlow ( bass: number )
   {
-      const RADIUS   = RADIUS * ( 0.15 + bass * 0.2 );
-      const _gradient = CANVAS_CONTEXT.createRadialGradient ( CENTER.x, CENTER.y, 0, CENTER.x, CENTER.y, r );
+      const _glowRadius = RADIUS * ( GLOW_BASE_FACTOR + bass * GLOW_BASS_MULTIPLIER );
 
-            _gradient.addColorStop ( 0, `rgba(255, 200, 90, ${0.3 + bass * 0.4})` );
-            _gradient.addColorStop ( 1, "rgba(0,0,0,0)" );
+      const _gradient = CANVAS_CONTEXT.createRadialGradient (
+          CENTER.x, CENTER.y, 0,
+          CENTER.x, CENTER.y, _glowRadius
+      );
+
+      const _alphaInner = GLOW_COLOR_ALPHA_BASE + bass * GLOW_COLOR_ALPHA_RANGE;
+
+      _gradient.addColorStop ( 0, `rgba(255, 200, 90, ${_alphaInner})` );
+      _gradient.addColorStop ( 1, "rgba(0,0,0,0)" );
 
       CANVAS_CONTEXT.save ( );
-
       CANVAS_CONTEXT.globalCompositeOperation = "lighter";
-      CANVAS_CONTEXT.fillStyle = _gradient;
 
+      CANVAS_CONTEXT.fillStyle = _gradient;
       CANVAS_CONTEXT.beginPath ( );
-      CANVAS_CONTEXT.arc ( CENTER.x, CENTER.y, RADIUS, 0, Math.PI * 2 );
+      CANVAS_CONTEXT.arc ( CENTER.x, CENTER.y, _glowRadius, 0, FULL_TURN_RAD );
       CANVAS_CONTEXT.fill ( );
 
       CANVAS_CONTEXT.restore ( );
@@ -227,12 +266,13 @@ import { animateRotation } from "./animation";
    */
   function setSectorAlignment ( index: number )
   {
-      const _sectorStep  = ( Math.PI * 2 ) / SECTORS;
-      const _newRotation = - Math.PI / 2 - ( index * _sectorStep + _sectorStep / 2 );
+      const _sectorStep  = FULL_TURN_RAD / SECTORS;
+      const _newRotation = INITIAL_ROTATION - ( index * _sectorStep + _sectorStep / 2 );
 
       targetRotation = _newRotation;
+      animating      = true;
 
-      const onUpdate = ( angle ) =>
+      const _onUpdate = ( angle: number ) =>
       {
           rotationOffset = angle;
           Shapes         = buildShapes ( RINGS, SECTORS, CENTER, RADIUS, rotationOffset );
@@ -240,9 +280,13 @@ import { animateRotation } from "./animation";
           drawGrid ( );
       };
 
-      const onComplete = ( ) => [ rotationOffset, animating ] = [ targetRotation, false ];
+      const _onComplete = ( ) =>
+      {
+          rotationOffset = targetRotation;
+          animating      = false;
+      };
 
-      animateRotation ( rotationOffset, targetRotation, 500, onUpdate, onComplete );
+      animateRotation ( rotationOffset, targetRotation, undefined, _onUpdate, _onComplete );
   }
 
   /** Advance to the next sector (clockwise) and rotate smoothly. */
@@ -295,7 +339,7 @@ import { animateRotation } from "./animation";
       const _a    = document.createElement ( "a" );
 
             _a.href     = _url;
-            _a.download = "polar-576-Shapes.json";
+            _a.download = "polar-shapes.json";
 
             _a.click ( );
 
@@ -311,40 +355,43 @@ import { animateRotation } from "./animation";
   {
       ELEMENTS.canvas.addEventListener ( "mousemove", ( event ) =>
       {
-          const _rectangle = ELEMENTS.canvas.getBoundingClientRect();
-          const _x         = event.clientX - _rectangle.left;
-          const _y         = event.clientY - _rectangle.top;
+          const _rect = ELEMENTS.canvas.getBoundingClientRect ( );
+          const _x    = event.clientX - _rect.left;
+          const _y    = event.clientY - _rect.top;
 
-          const _dx       = _x - CENTER.x;
-          const _dy       = _y - CENTER.y;
+          const _dx = _x - CENTER.x;
+          const _dy = _y - CENTER.y;
+
           const _distance = Math.sqrt ( _dx * _dx + _dy * _dy );
           const _angle    = Math.atan2 ( _dy, _dx );
 
-          for ( const _cell of Shapes )
+          for (const _cell of Shapes)
           {
               if ( _distance >= _cell.innerRing  && _distance <= _cell.outerRing &&
                    _angle    >= _cell.startAngle && _angle    <= _cell.endAngle )
               {
                   const _sector  = _cell.sector;
                   const _freqA   = FreqBounds [ _sector ];
-                  const _freqB   = FreqBounds [ _sector + 1 ];
+                  const _freqB   = FreqBounds [ _sector + 1];
                   const _decibel = LAST_DISPLAY_DB [ _sector ];
 
-                  if ( _freqA != undefined )
-
-                    ELEMENTS.tooltip.show ( event.clientX, event.clientY, `<b>${_freqA.toFixed ( 0 )} – ${_freqB.toFixed ( 0 )} Hz</b><br>${_decibel.toFixed ( 1 )} dB` );
+                  if (_freqA !== undefined)
+                  {
+                      ELEMENTS.tooltip.show (
+                          event.clientX + TOOLTIP_OFFSET_PX,
+                          event.clientY + TOOLTIP_OFFSET_PX,
+                          `<b>${_freqA.toFixed ( 0 )} – ${_freqB.toFixed ( 0 )} Hz</b><br>${_decibel.toFixed ( 1 )} dB`
+                      );
+                  }
 
                   return;
-                }
+              }
           }
 
           ELEMENTS.tooltip.hide ( );
-    } );
+      } );
 
-    ELEMENTS.canvas.addEventListener ( "mouseleave", ( ) =>
-    {
-        ELEMENTS.tooltip.hide ( );
-    } );
+      ELEMENTS.canvas.addEventListener ( "mouseleave", ( ) => ELEMENTS.tooltip.hide ( ) );
   }
 
   /**
@@ -367,45 +414,40 @@ import { animateRotation } from "./animation";
 
       ELEMENTS.inputs.fileAudio.addEventListener ( "change", async ( element ) =>
       {
-          const file = ( element.target as HTMLInputElement ).files?.[ 0 ];
+          const _file = ( element.target as HTMLInputElement ).files?.[ 0 ];
 
-          if ( ! file ) return;
+          if ( ! _file ) return;
 
-          // Reuse or create audio element
+          // Cleanup prior audio element
           if ( AudioElement )
           {
               AudioElement.pause ( );
               AudioElement.src = "";
           }
 
-          AudioElement             = new Audio ( URL.createObjectURL ( file ) );
+          // Create
+          AudioElement = new Audio ( URL.createObjectURL ( _file ) );
+
           AudioElement.crossOrigin = "anonymous";
           AudioElement.loop        = true;
           AudioElement.preload     = "auto";
           AudioElement.volume      = 1.0;
 
-          // Initialize or reuse the AudioContext + Analyser
           if ( ! AudioEnvironment )
-
               AudioEnvironment = await initAudio ( parseInt ( ELEMENTS.inputs.fft.value, 10 ), false );
 
           const { context: _audioContext, analyser: _analyser } = AudioEnvironment;
 
-          // Only create one MediaElementSource for this element
           if ( AudioSource )
-
               AudioSource.disconnect ( );
 
           AudioSource = _audioContext.createMediaElementSource ( AudioElement );
-
           AudioSource.connect ( _analyser );
           _analyser.connect ( _audioContext.destination );
 
-          // Bind context state handlers
           AudioElement.addEventListener ( "play", async ( ) =>
           {
-              if ( _audioContext.state === "suspended" )
-
+              if (_audioContext.state === "suspended")
                   await _audioContext.resume ( );
 
               setStatus ( true );
@@ -414,69 +456,45 @@ import { animateRotation } from "./animation";
           AudioElement.addEventListener ( "pause", ( ) => setStatus ( false ) );
           AudioElement.addEventListener ( "ended", ( ) => setStatus ( false ) );
 
-          // Start visualizer loop (if not already running)
           startVisualizerLoop ( );
 
-          // Enable Play button
           ELEMENTS.buttons.play.disabled = false;
 
-          await AudioElement.play ( ).catch ( ( ) => { /* ignore autoplay errors */ } );
+          await AudioElement.play ( ).catch ( ( ) => { } );
       } );
 
-      ELEMENTS.buttons.play.addEventListener ( "click", async ( ) =>
-      {
-          if ( ! AudioElement ) return;
 
-          const _audioContext = AudioEnvironment?.context;
-
-          if ( ! _audioContext ) return;
-
-          if ( AudioElement.paused )
-          {
-              if ( _audioContext.state === "suspended" )
-
-                  await _audioContext.resume ( );
-
-              await AudioElement.play ( );
-
-              setStatus ( true );
-          }
-          else
-          {
-              AudioElement.pause ( );
-
-              setStatus ( false );
-          }
-      } );
-
-  ////    FFT SLIDER LOGIC (DYNAMIC ANALYZER REINIT + SAFE POWER-OF-TWO)    /////
+      // =============================
+      //       FFT SLIDER LOGIC
+      // =============================
 
       ELEMENTS.inputs.fft.addEventListener ( "input", ( ) =>
       {
-          const _raw        = parseInt ( ELEMENTS.inputs.fft.value, 10 );
-          const _validSizes = [ 32, 64, 128, 256, 512, 1024, 2048 ];
-          const _fftSize    = _validSizes.reduce ( ( prev, curr ) => Math.abs ( curr - _raw ) < Math.abs ( prev - _raw ) ? curr : prev );
+          const _raw = parseInt ( ELEMENTS.inputs.fft.value, 10 );
+
+          const _fftSize = VALID_FFT_SIZES.reduce ( ( prev, curr ) =>
+              Math.abs ( curr - _raw ) < Math.abs ( prev - _raw ) ? curr : prev
+          );
 
           ELEMENTS.inputs.fft.value = _fftSize.toString ( );
 
           const _fftOut = document.getElementById ( "fftValue" ) as HTMLOutputElement;
 
-                _fftOut.textContent = _fftSize.toString ( );
+          _fftOut.textContent = _fftSize.toString ( );
 
           if ( AudioEnvironment?.analyser )
           {
-              // Update FFT size and reallocate data buffer
-              const { analyzer: _analyser } = AudioEnvironment;
+              const { analyser: _analyser } = AudioEnvironment;
 
-              _analyser._fftSize     = _fftSize;
+              // FIXED: correct property is fftSize, not _fftSize
+              _analyser.fftSize     = _fftSize;
               AudioEnvironment.data = new Uint8Array ( _analyser.frequencyBinCount );
 
-              // Log and brief UI feedback
               console.log ( `FFT size changed → ${_fftSize} (bins: ${_analyser.frequencyBinCount})` );
 
               _fftOut.classList.add ( "updated" );
 
-              setTimeout ( ( ) => _fftOut.classList.remove ( "updated" ), 120 );
+              setTimeout ( ( ) => _fftOut.classList.remove ( "updated" ), FFT_VALUE_FLASH_MS );
           }
       } );
 
@@ -486,12 +504,10 @@ import { animateRotation } from "./animation";
       {
           try
           {
-              if ( ! ( context instanceof CanvasRenderingContext2D ) )
-
+              if ( ! ( CANVAS_CONTEXT instanceof CanvasRenderingContext2D ) )
                   throw new Error ( "Canvas context missing" );
 
               if ( Shapes.length !== RINGS * SECTORS )
-
                   throw new Error ( "Shape count mismatch" );
 
               ELEMENTS.testResult.textContent = "✔ All tests passed";
@@ -499,7 +515,7 @@ import { animateRotation } from "./animation";
           }
           catch ( err )
           {
-              ELEMENTS.testResult.textContent = `✖ ${ ( err as Error ).message}`;
+              ELEMENTS.testResult.textContent = `✖ ${(err as Error).message}`;
               ELEMENTS.testResult.className   = "note fail";
           }
       } );
@@ -507,11 +523,10 @@ import { animateRotation } from "./animation";
       document.addEventListener ( "keydown", ( event ) =>
       {
           if ( event.key === "ArrowRight" ) nextSector ( );
-
           if ( event.key === "ArrowLeft"  ) prevSector ( );
       } );
 
-      bindTooltip();
+      bindTooltip ( );
   }
 
   /**

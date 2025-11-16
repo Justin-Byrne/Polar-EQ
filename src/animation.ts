@@ -3,6 +3,15 @@
 // Small helpers for smooth rotation animations.
 // ========================================================
 
+import
+{
+    SMOOTHSTEP_A,
+    SMOOTHSTEP_B,
+    INTERP_MIN,
+    INTERP_MAX,
+    ROTATION_DURATION_MS
+} from "./constants";
+
 /**
  * Callback invoked every frame with the interpolated angle.
  */
@@ -31,22 +40,19 @@ export function animateRotation (
 
     function _step ( now: number )
     {
-        const _rawT  = ( now - _start ) / durationMs;
-        const _t     = Math.min ( 1, Math.max ( 0, _rawT ) );
-        const _eased = _t * _t * ( 3 - 2 * _t);            // smoothstep
+        const _rawT    = ( now - _start ) / durationMs;
+
+        const _t       = Math.min ( INTERP_MAX, Math.max ( INTERP_MIN, _rawT ) );
+        const _eased   = _t * _t * (SMOOTHSTEP_A - SMOOTHSTEP_B * _t);
 
         const _current = from + _delta * _eased;
 
         onUpdate ( _current );
 
-        if ( _t < 1 )
-
+        if ( _t < INTERP_MAX )
             requestAnimationFrame ( _step );
-
         else
-
             onComplete?.( );
-
     }
 
     requestAnimationFrame ( _step );
