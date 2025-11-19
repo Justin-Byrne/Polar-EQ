@@ -49,7 +49,6 @@ import { animateRotation } from "./animation";
 
 import type { PolarCell } from "./types";
 
-
 //**    CONFIGURATION    ********************************//
 
   const RINGS   = DEFAULT_RINGS;
@@ -86,13 +85,13 @@ import type { PolarCell } from "./types";
 
 //**    CANVAS AND GEOMETRY    **************************//
 
-  const CANVAS_CONTEXT    = ELEMENTS.canvas.getContext ( "2d" )!;
+  const CANVAS_CONTEXT      = ELEMENTS.canvas.getContext ( "2d" )!;
 
-  const CENTER            = { x: ELEMENTS.canvas.width / 2, y: ELEMENTS.canvas.height / 2 };
+  const CENTER              = { x: ELEMENTS.canvas.width / 2, y: ELEMENTS.canvas.height / 2 };
 
-  let RADIUS              = ELEMENTS.canvas.width * CANVAS_RADIUS_SCALE;
+  let RADIUS                = ELEMENTS.canvas.width * CANVAS_RADIUS_SCALE;
 
-  let Shapes: PolarCell[] = buildShapes ( RINGS, SECTORS, CENTER, RADIUS );
+  let Shapes: PolarCell [ ] = buildShapes ( RINGS, SECTORS, CENTER, RADIUS );
 
 //**    AUDIO STATE    **********************************//
 
@@ -100,7 +99,7 @@ import type { PolarCell } from "./types";
   const LAST_DISPLAY_DB = new Array ( SECTORS ).fill ( DISPLAY_DB_MIN );
 
   let usingAudio = false;
-  let AudioEnvironment: Awaited<ReturnType<typeof initAudio>> | null = null;
+  let AudioEnvironment: Awaited < ReturnType < typeof initAudio > > | null = null;
 
   let FreqBounds:   number [ ] = new Array;
   let AudioElement: HTMLAudioElement | null = null;
@@ -115,7 +114,7 @@ import type { PolarCell } from "./types";
    * - Aggregates into log-spaced bands
    * - Renders the grid, peaks, and optional bass glow
    */
-  function startVisualizerLoop ( ): void
+  function startVisualizerLoop ( ) : void
   {
       if ( ! AudioEnvironment ) return;
 
@@ -148,14 +147,14 @@ import type { PolarCell } from "./types";
 
               let _max = 0;
 
-              for ( let _i = _binA; _i <= _binB; _i++ )
+              for ( let _i = _binA; _i <= _binB;_i++ )
                   _max = Math.max ( _max, _data [ _i ] ?? 0 );
 
               _perSectorMax [ _sector ] = _max;
           }
 
           // Fill grid cells
-          for (const _cell of Shapes)
+          for ( const _cell of Shapes )
           {
               const _sector  = _cell.sector;
               const _vector  = _perSectorMax [ _sector ];
@@ -198,7 +197,7 @@ import type { PolarCell } from "./types";
           }
 
           // Bass glow
-          if (ELEMENTS.inputs.glow.checked)
+          if ( ELEMENTS.inputs.glow.checked )
           {
               const _bassBins = Math.max ( 1, Math.floor ( _data.length * BASS_BIN_PERCENT ) );
 
@@ -365,17 +364,17 @@ import type { PolarCell } from "./types";
           const _distance = Math.sqrt ( _dx * _dx + _dy * _dy );
           const _angle    = Math.atan2 ( _dy, _dx );
 
-          for (const _cell of Shapes)
+          for ( const _cell of Shapes )
           {
               if ( _distance >= _cell.innerRing  && _distance <= _cell.outerRing &&
                    _angle    >= _cell.startAngle && _angle    <= _cell.endAngle )
               {
                   const _sector  = _cell.sector;
                   const _freqA   = FreqBounds [ _sector ];
-                  const _freqB   = FreqBounds [ _sector + 1];
+                  const _freqB   = FreqBounds [ _sector + 1 ];
                   const _decibel = LAST_DISPLAY_DB [ _sector ];
 
-                  if (_freqA !== undefined)
+                  if ( _freqA !== undefined )
                   {
                       ELEMENTS.tooltip.show (
                           event.clientX + TOOLTIP_OFFSET_PX,
@@ -414,7 +413,7 @@ import type { PolarCell } from "./types";
 
       ELEMENTS.inputs.fileAudio.addEventListener ( "change", async ( element ) =>
       {
-          const _file = ( element.target as HTMLInputElement ).files?.[ 0 ];
+          const _file = ( element.target as HTMLInputElement ).files?. [ 0 ];
 
           if ( ! _file ) return;
 
@@ -447,7 +446,7 @@ import type { PolarCell } from "./types";
 
           AudioElement.addEventListener ( "play", async ( ) =>
           {
-              if (_audioContext.state === "suspended")
+              if ( _audioContext.state === "suspended" )
                   await _audioContext.resume ( );
 
               setStatus ( true );
@@ -460,7 +459,8 @@ import type { PolarCell } from "./types";
 
           ELEMENTS.buttons.play.disabled = false;
 
-          await AudioElement.play ( ).catch ( ( ) => { } );
+          await AudioElement.play ( ).catch ( ( ) =>
+            { } );
       } );
 
 
@@ -515,7 +515,7 @@ import type { PolarCell } from "./types";
           }
           catch ( err )
           {
-              ELEMENTS.testResult.textContent = `✖ ${(err as Error).message}`;
+              ELEMENTS.testResult.textContent = `✖ ${ ( err as Error ).message}`;
               ELEMENTS.testResult.className   = "note fail";
           }
       } );
@@ -532,7 +532,7 @@ import type { PolarCell } from "./types";
   /**
    * Start capturing audio from the microphone and begin the visualizer loop.
    */
-  async function startMicAudio ( ): Promise<void>
+  async function startMicAudio ( ) : Promise < void >
   {
       const _fftSize = parseInt ( ELEMENTS.inputs.fft.value, 10 );
 

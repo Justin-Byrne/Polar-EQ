@@ -8,9 +8,8 @@
         "preview": "vite preview"
     },
     "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "^8.46.4",
         "@typescript-eslint/parser": "^8.46.4",
-        "eslint-plugin-wideband": "file:../eslint-plugin-wideband",
+        "eslint-plugin-wideband": "^1.1.19",
         "typescript": "^5.9.3",
         "vite": "^5.4.21"
     }

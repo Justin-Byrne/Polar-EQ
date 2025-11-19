@@ -1,17 +1,24 @@
-import wideband from "eslint-plugin-wideband";
+import widebandPlugin from "eslint-plugin-wideband";
 import tsParser from "@typescript-eslint/parser";
 
 export default [
+  // Configure global parser
   {
-    files: [ "**/*.ts", "**/*.js" ],
-    languageOptions: { parser: tsParser, },
-    plugins: { wideband, },
-    rules:
-    {
-      "wideband/arrays-brackets-spacing": "error",
-      "wideband/functions-declarations-spacing": "error",
-      "wideband/functions-calls-spacing": "error",
-      "wideband/expressions-operators-spacing": "error",
+    files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+      },
     },
-  },
+    plugins: {
+      wideband: widebandPlugin
+    },
+    rules: {
+      "wideband/wideband-spacing": "error",
+      "wideband/wideband-allman-braces": "error",
+      "wideband/wideband-internal-underscore": "warn"
+    }
+  }
 ];
