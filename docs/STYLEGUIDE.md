@@ -1,330 +1,126 @@
-# Polar-EQ – Code Style Guide (JavaScript & TypeScript)
+# STYLEGUIDE
 
-> **Version**: 1.0
->
-> **Languages**: JavaScript (Node.js, ESM), TypeScript
->
-> **Applies To**: Backend services, scripts, utilities, shared modules
->
-> **Purpose**: Provide a consistent, clean, scalable, and readable coding standard.
+## 1. Spacing Rules for Symbols
 
-## 1. General Principles
+Use **one or more spaces** before and after the following symbols unless specified otherwise.
 
-- Prefer TypeScript for new -development; use JavaScript for lightweight scripts.
+### 1.1 Basic Arithmetic & Logical Symbols
+- `+` Addition
+- `-` Subtraction
+- `*` Multiplication
+- `/` Division
+- `%` Modulo
+- `<` Less than
+- `>` Greater than
+- `<=` Less than or equal
+- `>=` Greater than or equal
+- `=` Assignment
+- `==` Loose equality
+- `===` Strict equality
+- `!=` Not equal
+- `!==` Strict not equal
+- `&&` Logical AND
+- `||` Logical OR
+- `??` Nullish coalescing
+- `|` Bitwise OR
+- `!` Logical NOT
+- `?` Ternary conditional
+- `=>` Arrow function
 
-- Use ES Modules (`import` / `export`) everywhere.
+### 1.2 Grouping Symbols
+- `(` `)` Parentheses — space before and after
+- `{` `}` Braces — space before and after
+- `[` `]` Brackets — space before and after
 
-- Maintain `strict` typing (`strict`, `noImplicitAny`, etc.).
+### 1.3 Commas
+- `,` must have **one or more spaces after it**.
 
-- Prioritize readability over cleverness.
+---
 
-- Consistency is more important than personal preference.
+## 2. Regex-Based Spacing Rules
 
-- Code should be:
+### 2.1 `LetterOrDigitOrUnderscore:`
+```
+[A-Za-z0-9_]:
+```
+Must have **one or more spaces after the colon**.
 
-  - Predictable (no hidden side effects)
+### 2.2 Comma Then Newlines
+```
+,[\r\n]+
+```
+This case is **ignored** — keep as-is.
 
-  - Modular
+---
 
-  - Testable
+## 3. Auxiliary Symbols (Ignored Cases)
+The following patterns are exceptions and **do not require added spacing**:
+- `++` unary plus
+- `--` unary negation
+- `);` closing paren + semicolon
+- `};` closing brace + semicolon
+- `];` closing bracket + semicolon
+- `!.` NOT operator before dot
+- `?.` optional chaining
+- `).` closing parentheses then dot
 
-  - Self-documenting
+---
 
-## 2. Naming Conventions
-### 2.1 Variables (local, block, function)
+## 4. Formatting Conventions
 
-- Use camelCase for all local variables.
+### 4.1 Block Formatting Style
+Use **Allman-style formatting** (opening brace on a new line) for:
+- Classes
+- Functions
+- Conditionals (`if`, `for`, `do`, `while`, `do while`)
 
-- Use descriptive, intention-revealing names.
-
-- Temporary variables may use `tmp` or `temp`.
-
+### Example
 ```ts
-let retryCount = 0;
-const requestId = "abc123";
-let tmpResult: string | null = null;
-```
-
-# 2.2 Constants
-
-- Use ALL_CAPS_SNAKE_CASE for:
-
-  - Module-level constants
-
-  - Configuration-like constants
-
-  - Values that do not change
-
-```ts
-export const API_VERSION = "v1";
-const MAX_RETRIES = 3;
-const DEFAULT_TIMEOUT_MS = 5000;
-```
-
-# 2.3 Functions
-
-- Use camelCase with verb-first names.
-
-```ts
-function getUserById(id: string) {}
-function calculateTotal(price: number, tax: number) {}
-```
-
-Boolean-returning functions use `is`, `has`, `should`, `can`.
-
-```ts
-function isAuthorized(user: User) {}
-function hasPermission(user: User, perm: string) {}
-```
-
-# 2.4 Classes, Types, Interfaces, Enums
-
-- PascalCase for:
-
-  - Classes
-
-  - Interfaces
-
-  - Type aliases
-
-  - Enums
-
-```ts
-class UserService {}
-interface UserPayload {}
-type UserId = string;
-enum LogLevel {
-  Info = "info",
-  Error = "error",
-}
-```
-
-## 2.5 Private and Internal Members
-### TypeScript Private Fields:
-
-```ts
-class Cache {
-  private store = new Map<string, string>();
-}
-```
-
-### JavaScript Private Fields:
-
-```ts
-class Cache {
-  #store = new Map();
-}
-```
-
-### Conventionally Private (JS or TS):
-
-```ts
-class LegacyCache {
-  _store = {};
-}
-```
-
-## 2.6 Module Scope & API Visibility
-
-- Internal-only values use an `_underscore` prefix.
-
-- Exported values must be intentionally designed and named.
-
-```ts
-const _poolLimit = 10; // internal
-
-export const MAX_POOL_SIZE = 50; // public
-```
-
-## 2.7 Environment Variables
-
-- Always ALL_CAPS_SNAKE_CASE.
-
-```bash
-DATABASE_URL="postgres://..."
-NODE_ENV="production"
-```
-
-Use through:
-
-```ts
-const DATABASE_URL = process.env.DATABASE_URL;
-```
-
-## 3. File & Folder Structure
-### 3.1 File Naming
-
-- Use kebab-case.
-
-- One component/module per file.
-
-Examples:
-
-```pgsql
-user-service.ts
-http-error.ts
-get-user.handler.ts
-```
-
-## 3.2 Folder Layout (Recommended)
-```pgsql
-src/
-  config/
-  domain/
-    user/
-      user.entity.ts
-      user.repository.ts
-      user.service.ts
-  infrastructure/
-    db/
-    http/
-  api/
-    routes/
-    handlers/
-  utils/
-tests/
-  unit/
-  integration/
-```
-
-## 4. Functions & Async Code
-
-- Prefer async/await over `.then()`.
-
-- Avoid top-level await in libraries; wrap in initialization functions.
-
-```ts
-async function fetchUser(id: string): Promise<User> {
-  return db.getUser(id);
-}
-```
-
-## 5. Error Handling
-
-- Always throw `Error` objects or subclasses.
-
-```ts
-class HttpError extends Error {
-  constructor(message: string, public status: number) {
-    super(message);
-    this.name = "HttpError";
-  }
-}
-```
-
-- Wrap asynchronous errors cleanly:
-
-```ts
-try {
-  const user = await fetchUser(id);
-} catch (err) {
-  logger.error({ err }, "User fetch failed");
-  throw err;
-}
-```
-
-## 6. Comments & Documentation
-
-- Comment why, not what.
-
-```ts
-// Retry only transient network failures
-async function fetchWithRetry(...) {}
-```
-
-- Use JSDoc/TSDoc for public APIs:
-
-```ts
-/**
- * Fetches a user by ID.
- */
-export async function getUserById(id: string): Promise<User> { ... }
-```
-
-## 7. Linting & Formatting
-
-Use:
-
-- ESLint for correctness + conventions
-
-- Prettier for formatting
-
-Required scripts:
-
-```json
+function getUser ( )
 {
-  "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write ."
-  }
+    if ( condition )
+    {
+        // ...
+    }
 }
 ```
 
-> Run `npm run lint:fix` before committing.
+---
 
-# 8. Code Examples
-## 8.1 Before (JavaScript)
+## 5. Naming Conventions
 
-```js
-var x = 10;
-function FOO(ID) { return db.find({ ID }); }
-class user_service {
-  constructor() { this.Cache = {}; }
-}
-```
+### 5.1 Variables & Constants
+| Concept                  | Convention                 | Example         |
+| ------------------------ | -------------------------- | --------------- |
+| Local variables          | camelCase                  | `userName`      |
+| Internal local variables | camelCase + `_` prefix     | `_user`         |
+| Temp variables           | camelCase + `_` prefix     | `_tempValue`    |
+| Constants                | ALL_CAPS                   | `MAX_SIZE`      |
+| Env variables            | ALL_CAPS                   | `DATABASE_URL`  |
 
-## 8.2 After (JavaScript)
-```js
-const MAX_RETRY_COUNT = 10;
+### 5.2 Functions & Methods
+- Use **camelCase**, verb-first naming.
+  Example: `getUser ( )`
 
-function getUser(id) {
-  return db.find({ id });
-}
+### 5.3 Classes, Types, Interfaces
+- Use **PascalCase**.
+  Example: `UserService`
 
-class UserService {
-  constructor() {
-    this._cache = {};
-  }
+### 5.4 Private / Internal Fields
+| Language/Context         | Convention     | Example         |
+| ------------------------- | -------------- | ---------------- |
+| Private TS fields         | `private` or `#` prefix | `private store` / `#cache` |
+| Private JS (by convention) | `_` prefix     | `_cache`         |
+| Module-internal           | `_prefix`      | `_limit`         |
 
-  add(user) {
-    this._cache[user.id] = user;
-  }
-}
-```
+---
 
-## 8.3 Before (TypeScript)
+## 6. Summary
+This style guide enforces:
+- Consistent spacing around operators and grouping symbols
+- Allman-style block formatting
+- Clear naming conventions for variables, functions, and classes
+- Predictable exceptions for unary and structural symbols
 
-```ts
-export async function handler(req, res) {
-  let u = await db.getUser(req.params.id);
-  if (!u) res.status(404).send("no user");
-  else res.send(u);
-}
-```
+This ensures readability, uniformity, and maintainable source code across all projects.
 
-## 8.4 After (TypeScript)
-
-```ts
-export async function getUserHandler(req: Request, res: Response) {
-  const userId = req.params.id;
-  const user = await getUserById(userId);
-
-  if (!user) return res.status(404).json({ message: "User not found" });
-
-  return res.json(user);
-}
-```
-
-## 9. Summary Table
-| Concept | Convention | Example |
-| ------- | ---------- | ------- |
-| Local variables | camelCase | `userName` |
-| Temp variables | `tmp*` | `tmpResult` |
-| Constants | ALL_CAPS | `MAX_SIZE` |
-| Functions | camelCase (verb-first) | `getUser()` |
-| Classes/Types/Interfaces | PascalCase | `UserService` |
-| Private TS fields | `private` or `#field` | `private store` |
-| Private JS convention | `_field` | `_cache` |
-| Module-internal | `_prefix` | `_limit` |
-| Env vars | ALL_CAPS | `DATABASE_URL` |
